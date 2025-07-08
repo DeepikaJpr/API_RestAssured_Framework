@@ -1,28 +1,22 @@
 
 Feature: Verify order placing functionality for ECommerce website
   
-  Scenario: login
-    Given "_loginPL" API payload
-    When send "POST" request with "api/ecom/auth/login"
-    Then response "message" is equals to "Login Successfully"
+  Background: login
+    Given "_loginPayload" API payload
+    When send "POST" request with "_loginAPIResource"
+    Then response "message" is equals to "Login Successfully" for "_loginTest"
 
 
-  #Scenario: Create Product
-    #Given "_createProductPL" API payload
-    #When send "POST" request with "api/ecom/product/add-product"
-    #Then response "message" is equals to "Product Added Successfully"
-    #
-  #Scenario: Create Order
-    #Given "_createOrderPL" API payload
-    #When send "POST" request with "api/ecom/order/create-order"
-    #Then response "message" is equals to "Product Added Successfully"
-    #
- #Scenario: Order Details
- #		Given "_OrderDetailsPL" API payload
-    #When send "GET" request with "api/ecom/order/get-orders-details"
-    #Then response "message" is equals to "Orders fetched for customer Successfully"
-    #
- #Scenario: Delete Order
- #		Given "_deleteOrderPL" API payload
-    #When send "Delete" request with "api/ecom/product/delete-product/{productId}"
-    #Then response "message" is equals to "Product Deleted Successfully"
+  Scenario: Create Product
+    Given "_createProductPayload" API payload
+    When send "POST" request with "_createProductAPIResource"
+    Then response "message" is equals to "Product Added Successfully" for "_createProductTest"
+
+ Scenario: Delete Order
+ 		Given "_createProductPayload" API payload
+    When send "POST" request with "_createProductAPIResource"
+    Then response "message" is equals to "Product Added Successfully" for "_createProductTest"
+    
+ 		Given "_deleteProductPayload" API payload
+    When send "DELETE" request with "_deleteProductAPIResource"
+    Then response "message" is equals to "Product Deleted Successfully" for "_deleteProductTest"

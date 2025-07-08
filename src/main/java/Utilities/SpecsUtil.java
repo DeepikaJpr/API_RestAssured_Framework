@@ -1,5 +1,7 @@
 package Utilities;
 
+import java.io.File;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -12,18 +14,54 @@ import io.restassured.specification.RequestSpecification;
 
 public class SpecsUtil {
 	
+	PrintStream pstream;
+	PropReadUtil prUtil ;
+	Properties prop; 
+	RequestSpecification login_reqSpecs ;
+	RequestSpecification createProduct_reqSpecs;
 	
-	public RequestSpecification reqSpecUtil() throws IOException {
+	public RequestSpecification getLoginReqSpec() throws IOException {
 		
-		PrintStream pstream = new PrintStream(new FileOutputStream("logging.txt"));
-		PropReadUtil prUtil = new PropReadUtil();
-		Properties prop = prUtil.readProp();
+		pstream = new PrintStream(new FileOutputStream("logging.txt"));
+		prUtil = new PropReadUtil();
+		prop = prUtil.readProp();
 		
-	RequestSpecification reqSpecs = new RequestSpecBuilder()
+	login_reqSpecs = new RequestSpecBuilder()
 				.setBaseUri(prop.getProperty("baseURI"))
 				.addFilter(RequestLoggingFilter.logRequestTo(pstream))
 				.setContentType(ContentType.JSON).build();
-	return reqSpecs;
+	return login_reqSpecs;
+	}
+	
+	public RequestSpecification getCreateProductReqSpec(String token,String userId,RequestSpecification base_reqspecs)
+	{
+		File file = new File("src/test/java/resources/Screenshot_1.png"); // works locally
+		System.out.println("====FILE Exists=========="+file.exists()+"==========");
+		
+		createProduct_reqSpecs = new RequestSpecBuilder()
+									.addRequestSpecification(base_reqspecs)
+									.addHeader("Content-Type","multipart/form-data")
+									.addHeader("Authorization", token)
+									.addParam("productName", "Test123")
+									.addParam("productAddedBy", userId)
+									.addParam("productCategory", "fashion")
+									.addParam("productSubCategory", "shirts")
+									.addParam("productPrice", "9999")
+									.addParam("productDescription", "Addias Originals")
+									.addParam("productFor","women")
+									.addMultiPart("productImage", file)
+									.build();
+		return createProduct_reqSpecs;
+									
+	}
+	
+	public RequestSpecification getDeleteProductReqSpec(String token,RequestSpecification base_reqspecs) {
+		return new RequestSpecBuilder()
+				.addRequestSpecification(base_reqspecs)
+				.addHeader("Authorization", token)
+				.setContentType(ContentType.JSON)
+				.build();
+				
 	}
 	
 
