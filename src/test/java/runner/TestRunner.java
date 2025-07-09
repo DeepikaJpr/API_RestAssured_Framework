@@ -10,7 +10,8 @@ import io.cucumber.junit.CucumberOptions;
 	    features = "src/test/java/Features",
 	    glue = "stepDefinitions",
 	    plugin = {"pretty", "summary"},
-	    monochrome = true
+	    tags="@CreateProduct"
+	   
 	)
 	public class TestRunner {
 	}

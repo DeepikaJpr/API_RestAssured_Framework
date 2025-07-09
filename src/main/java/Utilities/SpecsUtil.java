@@ -22,7 +22,7 @@ public class SpecsUtil {
 	
 	public RequestSpecification getLoginReqSpec() throws IOException {
 		
-		pstream = new PrintStream(new FileOutputStream("logging.txt"));
+		pstream = new PrintStream(new FileOutputStream("logging.txt",true));
 		prUtil = new PropReadUtil();
 		prop = prUtil.readProp();
 		
