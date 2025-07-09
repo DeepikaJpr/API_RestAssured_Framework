@@ -6,10 +6,12 @@ import static org.junit.Assert.assertTrue;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
+import static org.junit.Assert.*;
 
 import ECommerce_pojo.LoginRequest;
 import ECommerce_pojo.LoginResponse;
 import Utilities.APIResource;
+import Utilities.JsonPathUtil;
 import Utilities.PropReadUtil;
 import Utilities.SpecsUtil;
 import Utilities.TestContext;
@@ -19,6 +21,7 @@ import io.cucumber.java.en.When;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+
 
 public class PlaceOrder_StepDef {
 
@@ -33,7 +36,7 @@ public class PlaceOrder_StepDef {
 	Response when_response;
 	String token;
 	String userId;
-	String productId;
+	Object productId;
 
 	String addProductResponse;
 
@@ -63,15 +66,15 @@ public class PlaceOrder_StepDef {
 		switch (payloadType) {
 		case "_loginPayload":
 			login_reqSpecs = sutil.getLoginReqSpec();
-			given_result = given().log().all().spec(login_reqSpecs).body(lreq);
+			given_result = given().spec(login_reqSpecs).body(lreq);
 			break;
 		case "_createProductPayload":
 			createProduct_reqSpecs = sutil.getCreateProductReqSpec(token, userId,login_reqSpecs);
-			given_result = given().log().all().spec(createProduct_reqSpecs);
+			given_result = given().spec(createProduct_reqSpecs);
 			break;
 		case "_deleteOrderPayload":
 			deleteProduct_reqSpecs = sutil.getDeleteProductReqSpec(token,login_reqSpecs);
-			given_result = given().log().all().spec(deleteProduct_reqSpecs);
+			given_result = given().spec(deleteProduct_reqSpecs);
 			break;
 		default:
 			break;
@@ -101,11 +104,21 @@ public class PlaceOrder_StepDef {
 		}
 
 	}
+	
+	//To Do List
+	//NOTES: implement JsonPath in Utiliy and use object
+	//remove redundant steps in feature and use hooks for dummy data
+	//Query: making the userId,placeID,token satic will run in parallel ??
+	//implement Given separately for all scenaios
+	//move building Request Specification for all scenario to StepDef - Request Spec should only have common spec to all API 
 
 	@Then("response {string} is equals to {string} for {string}")
 	public void response_is_equals_to_for(String _key, String _value, String functionalityType) {
+		
+		
 		System.out.println(_key + "********THEN*********" + _value + " for " + functionalityType);
-
+		JsonPathUtil js = new JsonPathUtil();
+		
 		switch (functionalityType) {
 		case "_loginTest":
 			lres = when_response.then().extract().response().as(LoginResponse.class);
@@ -123,23 +136,30 @@ public class PlaceOrder_StepDef {
 			break;
 
 		case "_createProductTest":
-			addProductResponse = when_response.then().log().all().extract().response().asString();
-			JsonPath jsCreate = new JsonPath(addProductResponse);
+			addProductResponse = when_response.then().extract().response().asString();
+//			JsonPath jsCreate = new JsonPath(addProductResponse);
+//			
+//			TestContext.setProductId(jsCreate.getString("productId"));
 			
-			TestContext.setProductId(jsCreate.getString("productId"));
+			productId  = js.rawToJson(addProductResponse, "productId");
+			TestContext.setProductId((String) js.rawToJson(addProductResponse, "productId"));
 			productId = TestContext.getProductId();
 			
-			productId = jsCreate.getString("productId");
+			
 			System.out.println("ProductId: " + productId);
-			System.out.println("Message: " + jsCreate.getString(_key));
-			assertTrue("Expected message does not match actual", jsCreate.getString(_key).equals(_value));
+			System.out.println("Message: " + js.rawToJson(addProductResponse, _key));
+			String actualValue= (String) js.rawToJson(addProductResponse, _key);
+			
+			assertEquals(actualValue,_value);
 			break;
 
 		case "_deleteProductTest":
-			String deleteResponse = when_response.then().log().all().extract().response().asString();
-			JsonPath jsDelete = new JsonPath(deleteResponse);
-			System.out.println("Delete Message: " + jsDelete.getString(_key));
-			assertTrue("Expected message does not match actual", jsDelete.getString(_key).equals(_value));
+			String deleteResponse = when_response.then().extract().response().asString();
+			
+			System.out.println("Delete Message: " + js.rawToJson(deleteResponse, _key));
+			String actualDeleteValue = (String) js.rawToJson(deleteResponse, _key);	
+			assertEquals(actualDeleteValue, _value);
+			
 			break;
 
 		default:
