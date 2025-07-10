@@ -1,12 +1,12 @@
 package stepDefinitions;
 
 import static io.restassured.RestAssured.given;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.FileNotFoundException;
+import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
-import static org.junit.Assert.*;
 
 import ECommerce_pojo.LoginRequest;
 import ECommerce_pojo.LoginResponse;
@@ -40,49 +40,58 @@ public class PlaceOrder_StepDef {
 
 	Properties prop;
 
-	@Given("{string} API payload")
-	public void api_payload(String payloadType) throws FileNotFoundException, IOException {
+	@Given("Login {string} API payload")
+	public void login_api_payload(String payloadType) throws IOException {
+		System.out.println("****GIVEN LOGIN******" + payloadType + "**********");
 
-		System.out.println("****GIVEN******" + payloadType + "**********");
+		if (TestContext.getToken() != null && TestContext.getUserId() != null) {
+			System.out.println("Login already performed via Hooks. Skipping login step.");
+			return;
+		}
 
 		PropReadUtil prUtil = new PropReadUtil();
 		prop = prUtil.readProp();
 
+		lreq = new LoginRequest();
+		lreq.setUserEmail(prop.getProperty("ecomLogin"));
+		lreq.setUserPassword(prop.getProperty("ecomPassword"));
+
 		SpecsUtil sutil = new SpecsUtil();
-
-		switch (payloadType) {
-		case "_loginPayload":
-			// Skip login if already done via Hooks
-			if (TestContext.getToken() != null && TestContext.getUserId() != null) {
-				System.out.println("Login already performed via Hooks. Skipping login step.");
-				return;
-			}
-
-			// Proceed with login
-			lreq = new LoginRequest();
-			lreq.setUserEmail(prop.getProperty("ecomLogin"));
-			lreq.setUserPassword(prop.getProperty("ecomPassword"));
-
-			login_reqSpecs = sutil.getLoginReqSpec();
-			given_result = given().spec(login_reqSpecs).body(lreq);
-			break;
-
-		case "_createProductPayload":
-			createProduct_reqSpecs = sutil.getCreateProductReqSpec(TestContext.getToken(), TestContext.getUserId(),
-					new SpecsUtil().getLoginReqSpec());
-			given_result = given().spec(createProduct_reqSpecs);
-			break;
-
-		case "_deleteProductPayload":
-			deleteProduct_reqSpecs = sutil.getDeleteProductReqSpec(TestContext.getToken(), new SpecsUtil().getLoginReqSpec());
-			given_result = given().spec(deleteProduct_reqSpecs);
-			break;
-
-		default:
-			break;
-		}
+		login_reqSpecs = sutil.getBaseSpec();
+		given_result = given().spec(login_reqSpecs).body(lreq);
 	}
 
+	@Given("Create Product {string} API payload")
+	public void create_product_api_payload(String payloadType) throws IOException {
+		System.out.println("****GIVEN CREATE PRODUCT******" + payloadType + "**********");
+
+		SpecsUtil sutil = new SpecsUtil();
+		RequestSpecification authSpec = sutil.getAuthSpec(TestContext.getToken());
+
+		File file = new File("src/test/java/resources/Screenshot_1.png");
+		given_result = given().spec(authSpec)
+				.header("Content-Type","multipart/form-data")
+				.multiPart("productImage", file)
+				.formParam("productName", "Test123")
+				.formParam("productAddedBy",TestContext.getUserId())
+				.formParam("productCategory", "fashion")
+				.formParam("productSubCategory", "shirts")
+				.formParam("productPrice", "9999")
+				.formParam("productDescription", "Adidas Originals")
+				.formParam("productFor", "women");
+	}
+
+	@Given("Delete Order {string} API payload")
+	public void delete_order_api_payload(String payloadType) throws IOException {
+	    System.out.println("****GIVEN DELETE PRODUCT******" + payloadType + "**********");
+
+	    SpecsUtil sutil = new SpecsUtil();
+	    RequestSpecification authSpec = sutil.getAuthSpec(TestContext.getToken());
+
+	    given_result = given().spec(authSpec);
+	}
+
+		
 	@When("send {string} request with {string}")
 	public void send_request_with(String requestType, String resourceType) {
 
@@ -97,7 +106,7 @@ public class PlaceOrder_StepDef {
 			when_response = given_result.when().get(_resourceAPI);
 			break;
 		case "DELETE":
-			System.out.println("``````````````"+given_result+"``````````");
+			System.out.println("``````````````" + given_result + "``````````");
 			Object productId = TestContext.getProductId();
 			when_response = given_result.pathParam("productId", productId).when().delete(_resourceAPI);
 			break;
@@ -107,13 +116,6 @@ public class PlaceOrder_StepDef {
 		}
 
 	}
-
-	// To Do List
-	// remove redundant steps in feature and use hooks for dummy data
-	// Query: making the userId,placeID,token satic will run in parallel ??
-	// implement Given separately for all scenaios
-	// move building Request Specification for all scenario to StepDef - Request
-	// Spec should only have common spec to all API
 
 	@Then("response {string} is equals to {string} for {string}")
 	public void response_is_equals_to_for(String _key, String _value, String functionalityType) {

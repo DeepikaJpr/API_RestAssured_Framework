@@ -2,6 +2,7 @@ package stepDefinitions;
 
 import static io.restassured.RestAssured.given;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -18,9 +19,7 @@ import io.restassured.specification.RequestSpecification;
 
 public class Hooks {
 
-    // Runs before every scenario to ensure login is performed
-    
-	@Before(order = 0)
+    @Before(value ="not @Login",order = 0)
     public void ensureLogin() throws IOException {
         if (TestContext.getToken() != null && TestContext.getUserId() != null) {
             System.out.println("HOOK: Login already done. Skipping...");
@@ -37,9 +36,12 @@ public class Hooks {
         loginRequest.setUserPassword(prop.getProperty("ecomPassword"));
 
         SpecsUtil specs = new SpecsUtil();
-        RequestSpecification loginSpec = specs.getLoginReqSpec();
+        RequestSpecification loginSpec = specs.getBaseSpec();
 
-        Response loginResponse = given().spec(loginSpec).body(loginRequest).post("api/ecom/auth/login");
+        Response loginResponse = given().spec(loginSpec)
+                                        .body(loginRequest)
+                                        .post("api/ecom/auth/login");
+
         LoginResponse lres = loginResponse.as(LoginResponse.class);
 
         TestContext.setToken(lres.getToken());
@@ -48,8 +50,7 @@ public class Hooks {
         System.out.println("HOOK: Login Successful - Token and UserId set.");
     }
 
-    // Runs only before scenarios with @DeleteProduct to create a product
-    @Before(value="@DeleteProduct",order = 1)
+    @Before(value = "@DeleteProduct", order = 1)
     public void createProductIfRequired() throws IOException {
         if (TestContext.getProductId() != null) {
             System.out.println("HOOK: Product already created for this thread.");
@@ -59,13 +60,22 @@ public class Hooks {
         System.out.println("HOOK: Creating product for @DeleteProduct scenario");
 
         SpecsUtil specs = new SpecsUtil();
-        RequestSpecification createProductSpec = specs.getCreateProductReqSpec(
-                TestContext.getToken(),
-                TestContext.getUserId(),
-                specs.getLoginReqSpec()
-        );
+        RequestSpecification authSpec = specs.getAuthSpec(TestContext.getToken());
 
-        Response createResponse = given().spec(createProductSpec).post("api/ecom/product/add-product");
+        File file = new File("src/test/java/resources/Screenshot_1.png");
+
+        Response createResponse = given().spec(authSpec)
+        		.header("Content-Type","multipart/form-data")
+				.multiPart("productImage", file)
+                .formParam("productName", "Test123")
+                .formParam("productAddedBy", TestContext.getUserId())
+                .formParam("productCategory", "fashion")
+                .formParam("productSubCategory", "shirts")
+                .formParam("productPrice", "9999")
+                .formParam("productDescription", "Adidas Originals")
+                .formParam("productFor", "women")
+                .post("api/ecom/product/add-product");
+
         String responseBody = createResponse.asString();
 
         JsonPathUtil js = new JsonPathUtil();
