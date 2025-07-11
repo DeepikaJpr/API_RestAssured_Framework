@@ -28,32 +28,33 @@ The project follows a standard Maven directory structure, organized for clarity 
 
 ```
 APIFramework/
-├── .gitignore                  # Specifies intentionally untracked files to ignore
-├── pom.xml                     # Maven Project Object Model file
+├── .gitignore                                        # Specifies intentionally untracked files to ignore
+├── pom.xml                                           # Maven Project Object Model file
 ├── src/
 │   ├── main/
 │   │   └── java/
-│   │       └── com/yourcompany/yourproject/ # Base package for core logic
-│   │           ├── context/                # Manages scenario-specific data (e.g., auth tokens)
-│   │           │   └── ScenarioContext.java
-│   │           ├── pojo/                   # Plain Old Java Objects for API request/response bodies
-│   │           │   ├── LoginRequest.java
-│   │           │   └── ...
-│   │           └── utilities/              # Reusable utility classes
-│   │               ├── ConfigReader.java   # Handles reading from config.properties
-│   │               └── RequestSpecificationUtil.java # Builds RestAssured RequestSpecification
+│   │       ├── ECommerce_pojo/                       # POJOs for API request/response bodies
+│   │       │   ├── LoginRequest.java
+│   │       │   ├── LoginResponse.java
+│   │       │   └── ... (Other POJOs like Orders, OrdersRequestMain etc.)
+│   │       └── Utilities/                            # Reusable utility classes and API constants
+│   │           ├── APIResource.java                  # Enum for API endpoints
+│   │           ├── ConfigReader.java                 # Handles reading from config.properties
+│   │           ├── RequestSpecificationUtil.java     # Builds RestAssured RequestSpecification
+│   │           └── ... (Other utilities like JsonPathUtil, TestContext)
 │   └── test/
 │       ├── java/
-│       │   └── runners/                    # TestNG Cucumber Test Runner
-│       │       └── TestRunner.java
-│       │   └── stepDefinitions/            # Cucumber Step Definition classes
+│       │   ├── Features/                            # Gherkin Feature Files
+│       │   │   └── PlaceOrder.feature
+│       │   ├── runner/                              # TestNG Cucumber Test Runner
+│       │   │   └── TestRunner.java
+│       │   └── stepDefinitions/                     # Cucumber Step Definition classes and Hooks
+│       │       ├── Hooks.java
 │       │       └── PlaceOrder_StepDef.java
-│       └── resources/
-│           ├── Features/                   # Gherkin Feature Files
-│           │   └── *.feature
-│           └── config.properties.example   # Template for sensitive configuration
-├── testng.xml                  # TestNG suite configuration for parallel execution
-└── README.md                   # This file
+│       └── resources/                               # Configuration and test data files
+│           └── config.properties.example            # Template for sensitive configuration
+├── testng.xml                                       # TestNG suite configuration for parallel execution
+└── README.md                                        # This file
 ```
 
 ## 🚀 Getting Started
@@ -117,21 +118,21 @@ This command will clean the project, compile the code, and execute all tests def
 
 **Run Tests using testng.xml explicitly:**
 ```bash
-mvn test -Dsurefire.suiteXmlFiles=testng.xml
+mvn test -Dsurefire.suiteXmlFiles=TestNG.xml
 ```
 
 **Run Specific Scenarios using Cucumber Tags:**
 
 You can use Cucumber tags defined in your feature files to run a subset of scenarios.
 
-For example, to run only scenarios tagged with `@NeedsLogin`:
+For example, to run only scenarios tagged with `@CreateProduct`:
 ```bash
-mvn test -DCucumber.options="--tags @NeedsLogin"
+mvn test -DCucumber.options="--tags @CreateProduct"
 ```
 
-To run scenarios tagged with both `@NeedsLogin` and `@RequiresProduct`:
+To run scenarios tagged with both `@DeleteProduct` and `@CreateProduct`:
 ```bash
-mvn test -DCucumber.options="--tags '@NeedsLogin and @RequiresProduct'"
+mvn test -DCucumber.options="--tags '@DeleteProduct and @CreateProduct'"
 ```
 
 ### Via Eclipse IDE
@@ -155,14 +156,12 @@ For example, if "Delete Product" runs on Thread A, it will perform its own login
 
 After test execution, detailed HTML and JSON reports are generated in the `target/` directory:
 
-- **HTML Report**: `target/cucumber-reports.html` (Open this file in your web browser for a human-readable summary)
-- **JSON Report**: `target/cucumber.json` (For integration with other reporting tools)
+- **Surefire Report**: `target/surefire-reports/index.html` (For integration with other reporting tools)
 
 ## 🎨 Design Principles & Best Practices
 
 - **Behavior-Driven Development (BDD)**: Scenarios are written in Gherkin (Given-When-Then) to promote collaboration and provide clear, executable specifications
 - **Test Isolation & Independence**: Each test scenario is designed to be atomic, handling its own setup (e.g., login, data creation) and teardown. This is crucial for reliable parallel execution
-- **Scenario Context**: A `ScenarioContext` class is used to safely pass data (like authentication tokens, generated IDs) between steps within a single scenario's execution, ensuring thread-safety during parallel runs
 - **Page Object Model (POM) for API**: While not a traditional UI POM, POJO (Plain Old Java Object) classes are used to model API request and response bodies, enhancing readability and maintainability
 - **Utility Classes**: Common functionalities like `RequestSpecification` builders and `ConfigReader` are centralized in dedicated utility classes for reusability and cleaner step definitions
 - **Externalized Configuration**: Sensitive and environment-specific data is kept in `config.properties`, which is external to the codebase and ignored by Git
