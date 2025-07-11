@@ -14,12 +14,13 @@ import Utilities.TestContext;
 import Utilities.JsonPathUtil;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
+import io.cucumber.java.Scenario;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 
 public class Hooks {
 
-    @Before(value ="not @Login",order = 0)
+    @Before(value = "not @Login", order = 0)
     public void ensureLogin() throws IOException {
         if (TestContext.getToken() != null && TestContext.getUserId() != null) {
             System.out.println("HOOK: Login already done. Skipping...");
@@ -51,13 +52,13 @@ public class Hooks {
     }
 
     @Before(value = "@DeleteProduct", order = 1)
-    public void createProductIfRequired() throws IOException {
+    public void createProductBeforeScenario() throws IOException {
         if (TestContext.getProductId() != null) {
             System.out.println("HOOK: Product already created for this thread.");
             return;
         }
 
-        System.out.println("HOOK: Creating product for @DeleteProduct scenario");
+        System.out.println("HOOK: Creating product for @CreateProduct scenario");
 
         SpecsUtil specs = new SpecsUtil();
         RequestSpecification authSpec = specs.getAuthSpec(TestContext.getToken());
@@ -65,8 +66,8 @@ public class Hooks {
         File file = new File("src/test/java/resources/Screenshot_1.png");
 
         Response createResponse = given().spec(authSpec)
-        		.header("Content-Type","multipart/form-data")
-				.multiPart("productImage", file)
+                .header("Content-Type", "multipart/form-data")
+                .multiPart("productImage", file)
                 .formParam("productName", "Test123")
                 .formParam("productAddedBy", TestContext.getUserId())
                 .formParam("productCategory", "fashion")
@@ -85,9 +86,32 @@ public class Hooks {
         System.out.println("HOOK: Product created with ID = " + productId);
     }
 
-    @After
-    public void cleanUp() {
-        System.out.println("AFTER: Resetting TestContext");
+    @After(value = "@CreateProduct", order = 1)
+    public void deleteProductAfterScenario() throws IOException {
+        if (TestContext.getProductId() == null) {
+            System.out.println("AFTER HOOK: No product to delete.");
+            return;
+        }
+
+        System.out.println("AFTER HOOK: Deleting product with ID: " + TestContext.getProductId());
+
+        SpecsUtil specs = new SpecsUtil();
+        RequestSpecification authSpec = specs.getAuthSpec(TestContext.getToken());
+
+        Response deleteResponse = given().spec(authSpec)
+                .pathParam("productId", TestContext.getProductId())
+                .delete("api/ecom/product/delete-product/{productId}");
+
+        String response = deleteResponse.asString();
+        JsonPathUtil js = new JsonPathUtil();
+        String message = (String) js.rawToJson(response, "message");
+
+        System.out.println("AFTER HOOK: Delete Response Message: " + message);
+    }
+
+    @After(order = 0)
+    public void resetContext(Scenario scenario) {
+        System.out.println("AFTER: Resetting TestContext for scenario: " + scenario.getName());
         TestContext.reset();
     }
 }

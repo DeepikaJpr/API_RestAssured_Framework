@@ -1,12 +1,12 @@
 package stepDefinitions;
 
 import static io.restassured.RestAssured.given;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
+import static org.testng.Assert.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
+
+import org.testng.Assert;
 
 import ECommerce_pojo.LoginRequest;
 import ECommerce_pojo.LoginResponse;
@@ -136,7 +136,7 @@ public class PlaceOrder_StepDef {
 			System.out.println("Token: " + token);
 			System.out.println("UserId: " + userId);
 			System.out.println("Message: " + lres.getMessage());
-			assertTrue("Expected message does not match actual", lres.getMessage().equals(_value));
+			Assert.assertTrue(lres.getMessage().equals(_value),"Expected message does not match actual");
 			break;
 
 		case "_createProductTest":
