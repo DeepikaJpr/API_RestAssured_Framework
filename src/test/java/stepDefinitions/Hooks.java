@@ -63,7 +63,7 @@ public class Hooks {
         SpecsUtil specs = new SpecsUtil();
         RequestSpecification authSpec = specs.getAuthSpec(TestContext.getToken());
 
-        File file = new File("src/test/java/resources/Screenshot_1.png");
+        File file = new File("src/test/resources/Screenshot_1.png");
 
         Response createResponse = given().spec(authSpec)
                 .header("Content-Type", "multipart/form-data")

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.Properties;
 
 import org.testng.Assert;
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 
 import ECommerce_pojo.LoginRequest;
 import ECommerce_pojo.LoginResponse;
@@ -68,7 +69,7 @@ public class PlaceOrder_StepDef {
 		SpecsUtil sutil = new SpecsUtil();
 		RequestSpecification authSpec = sutil.getAuthSpec(TestContext.getToken());
 
-		File file = new File("src/test/java/resources/Screenshot_1.png");
+		File file = new File("src/test/resources/Screenshot_1.png");
 		given_result = given().spec(authSpec)
 				.header("Content-Type","multipart/form-data")
 				.multiPart("productImage", file)
@@ -125,14 +126,21 @@ public class PlaceOrder_StepDef {
 
 		switch (functionalityType) {
 		case "_loginTest":
+			
+			//	✅ Step 1: Schema validation
+			when_response.then().assertThat().body(matchesJsonSchemaInClasspath("schema/login-schema.json"));
+			
+			// ✅ Step 2: Deserialize after validation
 			lres = when_response.then().extract().response().as(LoginResponse.class);
 
+			// ✅ Step 3: Token and UserId extraction
 			TestContext.setToken(lres.getToken());
 			token = TestContext.getToken();
 
 			TestContext.setUserId(lres.getUserId());
 			userId = TestContext.getUserId();
 
+			// ✅ Step 4: Assertions
 			System.out.println("Token: " + token);
 			System.out.println("UserId: " + userId);
 			System.out.println("Message: " + lres.getMessage());
